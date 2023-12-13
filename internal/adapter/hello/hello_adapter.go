@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc"
 	"io"
 	"log"
+	"time"
 )
 
 type HelloAdapter struct {
@@ -55,4 +56,32 @@ func (a *HelloAdapter) SayManyHellos(ctx context.Context, name string) {
 
 		log.Println(greet.Greet)
 	}
+}
+
+func (a *HelloAdapter) SayHelloToEveryone(ctx context.Context, names []string) {
+	greetStream, err := a.helloClient.SayHelloToEveryone(ctx)
+
+	if err != nil {
+		log.Fatalf("Error on SayHelloToEveryone: %v\n", err)
+	}
+
+	for _, name := range names {
+		log.Printf("stream sending %s to server...\n", name)
+		req := &hello.HelloRequest{Name: name}
+
+		err := greetStream.Send(req)
+		if err != nil {
+			log.Fatalf("Error on send SayHelloToEveryone: %v\n", err)
+		}
+		time.Sleep(1 * time.Second)
+	}
+
+	log.Println("stream finish")
+
+	res, err := greetStream.CloseAndRecv()
+	if err != nil {
+		log.Fatalf("Error on close and recv SayHelloToEveryone: %v\n", err)
+	}
+
+	log.Println(res.Greet)
 }
