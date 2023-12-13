@@ -5,6 +5,7 @@ import (
 	"github.com/lukmansjy/my-grpc-go-client/internal/port"
 	"github.com/lukmansjy/my-grpc-proto/protogen/go/hello"
 	"google.golang.org/grpc"
+	"io"
 	"log"
 )
 
@@ -31,4 +32,27 @@ func (a *HelloAdapter) SayHello(ctx context.Context, name string) (*hello.HelloR
 	}
 
 	return greet, nil
+}
+
+func (a *HelloAdapter) SayManyHellos(ctx context.Context, name string) {
+	helloRequest := &hello.HelloRequest{
+		Name: name,
+	}
+
+	greetStream, err := a.helloClient.SayManyHellos(ctx, helloRequest)
+	if err != nil {
+		log.Fatalf("Error on SayManyHellos: %v\n", err)
+	}
+
+	for {
+		greet, err := greetStream.Recv()
+		if err != nil {
+			break
+		}
+		if err == io.EOF {
+			break
+		}
+
+		log.Println(greet.Greet)
+	}
 }
